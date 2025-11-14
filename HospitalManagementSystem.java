@@ -1,19 +1,7 @@
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
+import java.util.Scanner;
 
 class Patient {
     private int id;
@@ -42,6 +30,10 @@ class Patient {
 
     public String getDiagnosis() {
         return diagnosis;
+    }
+
+    public void setDiagnosis(String diagnosis) {
+        this.diagnosis = diagnosis;
     }
 
     @Override
@@ -116,6 +108,7 @@ class Appointment {
 }
 
 class HospitalService {
+
     private List<Patient> patients;
     private List<Doctor> doctors;
     private List<Appointment> appointments;
@@ -131,11 +124,6 @@ class HospitalService {
         this.patientIdCounter = 1;
         this.doctorIdCounter = 1;
         this.appointmentIdCounter = 1;
-
-        addDoctor("Dr. Smith", "Cardiology");
-        addDoctor("Dr. Jones", "Neurology");
-        addPatient("Alice", 30, "Heart Palpitations");
-        addPatient("Bob", 45, "Migraines");
     }
 
     public Patient addPatient(String name, int age, String diagnosis) {
@@ -176,16 +164,17 @@ class HospitalService {
         return new ArrayList<>(doctors);
     }
 
-    public Appointment scheduleAppointment(int patientId, int doctorId, String date) 
-            throws IllegalArgumentException {
+    public Appointment scheduleAppointment(int patientId, int doctorId, String date) {
         Patient patient = findPatientById(patientId);
         Doctor doctor = findDoctorById(doctorId);
 
         if (patient == null) {
-            throw new IllegalArgumentException("Patient with ID " + patientId + " not found.");
+            System.out.println("Error: Patient with ID " + patientId + " not found.");
+            return null;
         }
         if (doctor == null) {
-            throw new IllegalArgumentException("Doctor with ID " + doctorId + " not found.");
+            System.out.println("Error: Doctor with ID " + doctorId + " not found.");
+            return null;
         }
 
         Appointment newAppointment = new Appointment(appointmentIdCounter++, patient, doctor, date);
@@ -198,242 +187,165 @@ class HospitalService {
     }
 }
 
-public class HospitalManagementSystem extends JFrame {
+public class HospitalManagementSystem {
 
-    private final HospitalService service;
-    private final CardLayout cardLayout;
-    private final JPanel mainPanel;
-    private final JTextArea viewTextArea;
-    
-    private final JTextField patientNameField;
-    private final JTextField patientAgeField;
-    private final JTextField patientDiagnosisField;
-
-    private final JTextField doctorNameField;
-    private final JTextField doctorSpecField;
-    
-    private final JTextField appPatientIdField;
-    private final JTextField appDoctorIdField;
-    private final JTextField appDateField;
-
-    public HospitalManagementSystem() {
-        service = new HospitalService();
-        cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout);
-
-        viewTextArea = new JTextArea(20, 40);
-        viewTextArea.setEditable(false);
-
-        patientNameField = new JTextField(20);
-        patientAgeField = new JTextField(5);
-        patientDiagnosisField = new JTextField(20);
-
-        doctorNameField = new JTextField(20);
-        doctorSpecField = new JTextField(20);
-
-        appPatientIdField = new JTextField(5);
-        appDoctorIdField = new JTextField(5);
-        appDateField = new JTextField(10);
-
-        mainPanel.add(createMainMenuPanel(), "MENU");
-        mainPanel.add(createAddPatientPanel(), "ADD_PATIENT");
-        mainPanel.add(createAddDoctorPanel(), "ADD_DOCTOR");
-        mainPanel.add(createScheduleAppointmentPanel(), "ADD_APPOINTMENT");
-        mainPanel.add(createViewPanel(), "VIEW");
-
-        add(mainPanel);
-        setTitle("Hospital Management System");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        pack();
-        setLocationRelativeTo(null);
-        setVisible(true);
-    }
-
-    private JPanel createMainMenuPanel() {
-        JPanel panel = new JPanel(new GridLayout(6, 1, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JButton addPatientBtn = new JButton("Add Patient");
-        addPatientBtn.addActionListener(e -> cardLayout.show(mainPanel, "ADD_PATIENT"));
-
-        JButton addDoctorBtn = new JButton("Add Doctor");
-        addDoctorBtn.addActionListener(e -> cardLayout.show(mainPanel, "ADD_DOCTOR"));
-
-        JButton scheduleAppBtn = new JButton("Schedule Appointment");
-        scheduleAppBtn.addActionListener(e -> cardLayout.show(mainPanel, "ADD_APPOINTMENT"));
-
-        JButton viewPatientsBtn = new JButton("View Patients");
-        viewPatientsBtn.addActionListener(e -> {
-            updateViewArea(service.getAllPatients());
-            cardLayout.show(mainPanel, "VIEW");
-        });
-
-        JButton viewDoctorsBtn = new JButton("View Doctors");
-        viewDoctorsBtn.addActionListener(e -> {
-            updateViewArea(service.getAllDoctors());
-            cardLayout.show(mainPanel, "VIEW");
-        });
-
-        JButton viewAppsBtn = new JButton("View Appointments");
-        viewAppsBtn.addActionListener(e -> {
-            updateViewArea(service.getAllAppointments());
-            cardLayout.show(mainPanel, "VIEW");
-        });
-
-        panel.add(addPatientBtn);
-        panel.add(addDoctorBtn);
-        panel.add(scheduleAppBtn);
-        panel.add(viewPatientsBtn);
-        panel.add(viewDoctorsBtn);
-        panel.add(viewAppsBtn);
-
-        return panel;
-    }
-
-    private JPanel createFormPanel(String title, JTextField[] fields, JLabel[] labels, ActionListener submitAction) {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JLabel titleLabel = new JLabel(title, JLabel.CENTER);
-        panel.add(titleLabel, BorderLayout.NORTH);
-
-        JPanel formGrid = new JPanel(new GridLayout(fields.length, 2, 10, 10));
-        for (int i = 0; i < fields.length; i++) {
-            formGrid.add(labels[i]);
-            formGrid.add(fields[i]);
-        }
-        panel.add(formGrid, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel();
-        JButton submitButton = new JButton("Submit");
-        submitButton.addActionListener(submitAction);
-        
-        JButton backButton = new JButton("Back to Menu");
-        backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
-
-        buttonPanel.add(submitButton);
-        buttonPanel.add(backButton);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private JPanel createAddPatientPanel() {
-        JTextField[] fields = {patientNameField, patientAgeField, patientDiagnosisField};
-        JLabel[] labels = {new JLabel("Name:"), new JLabel("Age:"), new JLabel("Diagnosis:")};
-        
-        ActionListener action = e -> {
-            try {
-                String name = patientNameField.getText();
-                int age = Integer.parseInt(patientAgeField.getText());
-                String diagnosis = patientDiagnosisField.getText();
-                
-                if (name.isEmpty() || diagnosis.isEmpty()) {
-                    throw new IllegalArgumentException("Fields cannot be empty.");
-                }
-
-                service.addPatient(name, age, diagnosis);
-                JOptionPane.showMessageDialog(this, "Patient added successfully!");
-                patientNameField.setText("");
-                patientAgeField.setText("");
-                patientDiagnosisField.setText("");
-                cardLayout.show(mainPanel, "MENU");
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Invalid age. Please enter a number.", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        };
-        
-        return createFormPanel("Add New Patient", fields, labels, action);
-    }
-
-    private JPanel createAddDoctorPanel() {
-        JTextField[] fields = {doctorNameField, doctorSpecField};
-        JLabel[] labels = {new JLabel("Name:"), new JLabel("Specialization:")};
-        
-        ActionListener action = e -> {
-            try {
-                String name = doctorNameField.getText();
-                String specialization = doctorSpecField.getText();
-
-                if (name.isEmpty() || specialization.isEmpty()) {
-                    throw new IllegalArgumentException("Fields cannot be empty.");
-                }
-
-                service.addDoctor(name, specialization);
-                JOptionPane.showMessageDialog(this, "Doctor added successfully!");
-                doctorNameField.setText("");
-                doctorSpecField.setText("");
-                cardLayout.show(mainPanel, "MENU");
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        };
-        
-        return createFormPanel("Add New Doctor", fields, labels, action);
-    }
-
-    private JPanel createScheduleAppointmentPanel() {
-        JTextField[] fields = {appPatientIdField, appDoctorIdField, appDateField};
-        JLabel[] labels = {new JLabel("Patient ID:"), new JLabel("Doctor ID:"), new JLabel("Date (YYYY-MM-DD):")};
-        
-        ActionListener action = e -> {
-            try {
-                int patientId = Integer.parseInt(appPatientIdField.getText());
-                int doctorId = Integer.parseInt(appDoctorIdField.getText());
-                String date = appDateField.getText();
-
-                if (date.isEmpty()) {
-                    throw new IllegalArgumentException("Date cannot be empty.");
-                }
-
-                service.scheduleAppointment(patientId, doctorId, date);
-                JOptionPane.showMessageDialog(this, "Appointment scheduled successfully!");
-                appPatientIdField.setText("");
-                appDoctorIdField.setText("");
-                appDateField.setText("");
-                cardLayout.show(mainPanel, "MENU");
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Invalid ID. Please enter a number.", "Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        };
-        
-        return createFormPanel("Schedule Appointment", fields, labels, action);
-    }
-
-    private JPanel createViewPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JScrollPane scrollPane = new JScrollPane(viewTextArea);
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        JButton backButton = new JButton("Back to Menu");
-        backButton.addActionListener(e -> cardLayout.show(mainPanel, "MENU"));
-        
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(backButton);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-
-        return panel;
-    }
-
-    private <T> void updateViewArea(List<T> items) {
-        viewTextArea.setText("");
-        if (items.isEmpty()) {
-            viewTextArea.setText("No items found.");
-        } else {
-            for (T item : items) {
-                viewTextArea.append(item.toString() + "\n\n");
-            }
-        }
-        viewTextArea.setCaretPosition(0);
-    }
+    private static final HospitalService service = new HospitalService();
+    private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new HospitalManagementSystem());
+        service.addDoctor("Dr. Smith", "Cardiology");
+        service.addDoctor("Dr. Jones", "Neurology");
+        service.addPatient("Alice", 30, "Heart Palpitations");
+        service.addPatient("Bob", 45, "Migraines");
+
+        run();
+    }
+
+    public static void run() {
+        boolean running = true;
+        while (running) {
+            displayMenu();
+            int choice = getIntInput();
+
+            switch (choice) {
+                case 1:
+                    handleAddPatient();
+                    break;
+                case 2:
+                    handleAddDoctor();
+                    break;
+                case 3:
+                    handleScheduleAppointment();
+                    break;
+                case 4:
+                    handleViewPatients();
+                    break;
+                case 5:
+                    handleViewDoctors();
+                    break;
+                case 6:
+                    handleViewAppointments();
+                    break;
+                case 7:
+                    running = false;
+                    System.out.println("Exiting system. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again (1-7).");
+            }
+            if (running) {
+                System.out.println("\nPress Enter to continue...");
+                scanner.nextLine(); 
+            }
+        }
+        scanner.close();
+    }
+
+    private static void displayMenu() {
+        System.out.println("\n--- Hospital Management System ---");
+        System.out.println("1. Add Patient");
+        System.out.println("2. Add Doctor");
+        System.out.println("3. Schedule Appointment");
+        System.out.println("4. View Patients");
+        System.out.println("5. View Doctors");
+        System.out.println("6. View Appointments");
+        System.out.println("7. Exit");
+        System.out.print("Enter your choice: ");
+    }
+
+    private static void handleAddPatient() {
+        System.out.print("Enter Patient Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter Patient Age: ");
+        int age = getIntInput();
+        System.out.print("Enter Patient Diagnosis: ");
+        String diagnosis = scanner.nextLine();
+
+        Patient p = service.addPatient(name, age, diagnosis);
+        System.out.println("Patient added successfully: " + p);
+    }
+
+    private static void handleAddDoctor() {
+        System.out.print("Enter Doctor Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter Doctor Specialization: ");
+        String specialization = scanner.nextLine();
+
+        Doctor d = service.addDoctor(name, specialization);
+        System.out.println("Doctor added successfully: " + d);
+    }
+
+    private static void handleScheduleAppointment() {
+        System.out.println("\n--- Available Doctors ---");
+        handleViewDoctors();
+        System.out.print("Enter Doctor ID: ");
+        int docId = getIntInput();
+
+        System.out.println("\n--- Registered Patients ---");
+        handleViewPatients();
+        System.out.print("Enter Patient ID: ");
+        int patId = getIntInput();
+
+        System.out.print("Enter Appointment Date (YYYY-MM-DD): ");
+        String date = scanner.nextLine();
+
+        Appointment app = service.scheduleAppointment(patId, docId, date);
+        if (app != null) {
+            System.out.println("Appointment scheduled successfully!");
+            System.out.println(app);
+        } else {
+            System.out.println("Failed to schedule appointment. Check IDs.");
+        }
+    }
+
+    private static void handleViewPatients() {
+        List<Patient> patients = service.getAllPatients();
+        if (patients.isEmpty()) {
+            System.out.println("No patients found.");
+            return;
+        }
+        System.out.println("\n--- Patient List ---");
+        for (Patient p : patients) {
+            System.out.println(p);
+        }
+    }
+
+    private static void handleViewDoctors() {
+        List<Doctor> doctors = service.getAllDoctors();
+        if (doctors.isEmpty()) {
+            System.out.println("No doctors found.");
+            return;
+        }
+        System.out.println("\n--- Doctor List ---");
+        for (Doctor d : doctors) {
+            System.out.println(d);
+        }
+    }
+
+    private static void handleViewAppointments() {
+        List<Appointment> appointments = service.getAllAppointments();
+        if (appointments.isEmpty()) {
+            System.out.println("No appointments found.");
+            return;
+        }
+        System.out.println("\n--- Appointment List ---");
+        for (Appointment a : appointments) {
+            System.out.println("--------------------");
+            System.out.println(a);
+        }
+        System.out.println("--------------------");
+    }
+
+    private static int getIntInput() {
+        while (true) {
+            try {
+                int value = scanner.nextInt();
+                scanner.nextLine(); 
+                return value;
+            } catch (InputMismatchException e) {
+                System.out.print("Invalid input. Please enter a number: ");
+                scanner.nextLine(); 
+            }
+        }
     }
 }
